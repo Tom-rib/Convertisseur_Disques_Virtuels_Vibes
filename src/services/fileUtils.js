@@ -5,6 +5,41 @@ const { execSync, spawn } = require('child_process');
 
 class FileUtils {
   /**
+   * Résoudre un chemin source de disque virtuel.
+   * Supporte les bundles VMware (.vmwarevm) sur macOS en trouvant le .vmdk principal.
+   */
+  static async resolveVirtualDiskPath(inputPath) {
+    const stats = await fs.stat(inputPath);
+
+    if (stats.isFile()) {
+      return inputPath;
+    }
+
+    const ext = path.extname(inputPath).toLowerCase();
+    if (!stats.isDirectory() || ext !== '.vmwarevm') {
+      throw new Error('Source path must be a disk file or a .vmwarevm bundle');
+    }
+
+    const entries = await fs.readdir(inputPath, { withFileTypes: true });
+    const vmdkFiles = entries
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.vmdk'))
+      .map((entry) => path.join(inputPath, entry.name));
+
+    if (vmdkFiles.length === 0) {
+      throw new Error('No .vmdk file found inside .vmwarevm bundle');
+    }
+
+    const preferred = vmdkFiles.find((filePath) => {
+      const lower = path.basename(filePath).toLowerCase();
+      return !lower.endsWith('-flat.vmdk')
+        && !lower.endsWith('-ctk.vmdk')
+        && !/-s\d+\.vmdk$/.test(lower);
+    });
+
+    return preferred || vmdkFiles[0];
+  }
+
+  /**
    * Déterminer le format du disque virtuel
    * Basé sur la signature du fichier (magic bytes)
    */
@@ -55,7 +90,8 @@ class FileUtils {
    */
   static async validateFile(filePath) {
     try {
-      const stats = await fs.stat(filePath);
+      const resolvedPath = await this.resolveVirtualDiskPath(filePath);
+      const stats = await fs.stat(resolvedPath);
       
       // Vérifier que c'est un fichier
       if (!stats.isFile()) {
@@ -68,7 +104,7 @@ class FileUtils {
       }
 
       // Vérifier les permissions de lecture
-      await fs.access(filePath, fs.constants.R_OK);
+      await fs.access(resolvedPath, fs.constants.R_OK);
       
       return true;
     } catch (error) {
@@ -82,12 +118,13 @@ class FileUtils {
    */
   static async getFileInfo(filePath) {
     try {
-      const stats = await fs.stat(filePath);
-      const format = await this.detectFormat(filePath);
+      const resolvedPath = await this.resolveVirtualDiskPath(filePath);
+      const stats = await fs.stat(resolvedPath);
+      const format = await this.detectFormat(resolvedPath);
 
       return {
-        path: filePath,
-        name: path.basename(filePath),
+        path: resolvedPath,
+        name: path.basename(resolvedPath),
         size: stats.size,
         format: format,
         modified: stats.mtime,

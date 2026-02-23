@@ -40,9 +40,9 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('browse-source-file', async () => {
   const result = await dialog.showOpenDialog({
-    properties: ['openFile'],
+    properties: ['openFile', 'openDirectory'],
     filters: [
-      { name: 'Disques virtuels', extensions: ['vmdk', 'vhd', 'vhdx', 'qcow2', 'img', 'raw', 'vdi'] },
+      { name: 'Disques virtuels', extensions: ['vmdk', 'vhd', 'vhdx', 'qcow2', 'img', 'raw', 'vdi', 'vmwarevm'] },
       { name: 'Tous les fichiers', extensions: ['*'] }
     ]
   });
@@ -51,7 +51,8 @@ ipcMain.handle('browse-source-file', async () => {
     return null;
   }
 
-  return result.filePaths[0];
+  const selectedPath = result.filePaths[0];
+  return FileUtils.resolveVirtualDiskPath(selectedPath);
 });
 
 ipcMain.handle('browse-destination-folder', async () => {
