@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertisseur Disques Virtuels</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #3b82f6;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #f59e0b;
+        }
+
+        body.dark-mode {
+            @apply bg-gray-900 text-gray-100;
+        }
+
+        body.light-mode {
+            @apply bg-white text-gray-900;
+        }
+
+        header {
+            border-bottom: 1px solid #e5e7eb;
+            background-color: white;
+            color: #111827;
+        }
+
+        body.dark-mode header {
+            border-bottom-color: #374151;
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
+        .card {
+            @apply rounded-lg border transition-all duration-200;
+        }
+
+        .light-mode .card {
+            @apply bg-gray-50 border-gray-200;
+        }
+
+        .dark-mode .card {
+            @apply bg-gray-800 border-gray-700;
+        }
+
+        .input-field {
+            @apply px-4 py-2 rounded-lg border transition-all;
+        }
+
+        .light-mode .input-field {
+            @apply bg-white border-gray-300 text-gray-900;
+        }
+
+        .dark-mode .input-field {
+            @apply bg-gray-700 border-gray-600 text-white;
+        }
+
+        .btn {
+            @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+        }
+
+        .btn-primary {
+            @apply bg-blue-600 text-white hover:bg-blue-700;
+        }
+
+        .btn-secondary {
+            @apply border-2 border-blue-600 text-blue-600 hover:bg-blue-50;
+        }
+
+        .dark-mode .btn-secondary {
+            @apply border-2 border-blue-400 text-blue-400 hover:bg-gray-800;
+        }
+
+        .badge {
+            @apply inline-block px-3 py-1 rounded-full text-sm font-medium;
+        }
+
+        .badge-success {
+            @apply bg-green-100 text-green-800;
+        }
+
+        .dark-mode .badge-success {
+            @apply bg-green-900 text-green-200;
+        }
+
+        .badge-danger {
+            @apply bg-red-100 text-red-800;
+        }
+
+        .dark-mode .badge-danger {
+            @apply bg-red-900 text-red-200;
+        }
+
+        .progress-bar {
+            @apply w-full bg-gray-300 rounded-full h-3 overflow-hidden;
+        }
+
+        .dark-mode .progress-bar {
+            @apply bg-gray-700;
+        }
+
+        .progress-fill {
+            @apply h-full bg-blue-600 transition-all duration-300;
+        }
+
+        .spinner {
+            @apply inline-block animate-spin;
+        }
+
+        .file-info-box {
+            @apply p-4 rounded-lg border-l-4;
+        }
+
+        .file-info-box.success {
+            @apply border-l-green-500 bg-green-50;
+        }
+
+        .dark-mode .file-info-box.success {
+            @apply bg-green-900 border-l-green-400;
+        }
+
+        .dark-mode .file-info-box.success p.text-gray-600 {
+            @apply text-green-300;
+        }
+
+        .collapsible-header {
+            @apply cursor-pointer select-none;
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.open {
+            max-height: 500px;
+        }
+
+        .history-item {
+            @apply p-3 rounded-lg border transition-all hover:shadow-lg;
+        }
+
+        .light-mode .history-item {
+            @apply bg-white border-gray-200;
+        }
+
+        .dark-mode .history-item {
+            @apply bg-gray-800 border-gray-700;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                @apply px-4;
+            }
+            
+            .card {
+                @apply p-4;
+            }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="sticky top-0 z-40 border-b">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-compact-disc text-2xl text-blue-600"></i>
+                    <h1 class="text-2xl font-bold">Convertisseur Disques Virtuels</h1>
+                </div>
+                <button id="themeToggle" class="btn btn-secondary">
+                    <i class="fas fa-moon"></i> Dark
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8 max-w-6xl">
+            <!-- Source File Section -->
+            <section class="mb-8">
+                <div class="card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i class="fas fa-file-import text-xl text-blue-600"></i>
+                        <h2 class="text-xl font-bold">Fichier Source</h2>
+                    </div>
+                    
+                    <div class="flex gap-4 mb-4">
+                        <button id="browseSourceBtn" class="btn btn-primary">
+                            <i class="fas fa-folder-open mr-2"></i> Parcourir...
+                        </button>
+                        <input type="text" id="sourceFilePath" class="input-field flex-1" placeholder="Aucun fichier sélectionné" readonly>
+                    </div>
+
+                    <div id="sourceInfo" style="display: none;">
+                        <div class="file-info-box success">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-600">Format détecté</p>
+                                    <p id="sourceFormat" class="text-lg font-bold"></p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-600">Taille</p>
+                                    <p id="sourceSize" class="text-lg font-bold"></p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-600">Chemin</p>
+                                    <p id="sourceFileName" class="text-sm truncate"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Format Destination Section -->
+            <section class="mb-8">
+                <div class="card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i class="fas fa-exchange-alt text-xl text-blue-600"></i>
+                        <h2 class="text-xl font-bold">Format Destination</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Sélectionner le format</label>
+                            <select id="destFormat" class="input-field w-full">
+                                <option value="">-- Choisir un format --</option>
+                                <option value="VMDK">VMDK (VMware ESXi)</option>
+                                <option value="VHD">VHD (Hyper-V)</option>
+                                <option value="VHDX">VHDX (Hyper-V moderne)</option>
+                                <option value="QCOW2">QCOW2 (Proxmox/KVM)</option>
+                                <option value="RAW">RAW (Disque brut)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Compatibilité</label>
+                            <div id="compatibilityBadge" class="pt-2">
+                                <span class="badge badge-danger">Sélectionnez un format</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Destination Folder Section -->
+            <section class="mb-8">
+                <div class="card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i class="fas fa-folder-plus text-xl text-blue-600"></i>
+                        <h2 class="text-xl font-bold">Dossier Destination</h2>
+                    </div>
+
+                    <div class="flex gap-4 mb-4">
+                        <button id="browseDestBtn" class="btn btn-primary">
+                            <i class="fas fa-folder-open mr-2"></i> Parcourir...
+                        </button>
+                        <input type="text" id="destFolderPath" class="input-field flex-1" placeholder="Aucun dossier sélectionné" readonly>
+                    </div>
+
+                    <div id="destInfo" style="display: none;" class="mb-4">
+                        <div class="file-info-box success">
+                            <p class="text-sm font-semibold text-gray-600">Espace libre</p>
+                            <p id="freeSpace" class="text-lg font-bold"></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Nom du fichier</label>
+                            <input type="text" id="outputFileName" class="input-field w-full" placeholder="nom_fichier.qcow2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Chemin complet</label>
+                            <input type="text" id="fullOutputPath" class="input-field w-full" placeholder="/dossier/fichier" readonly>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Advanced Options -->
+            <section class="mb-8">
+                <div class="card">
+                    <div class="collapsible-header p-6 border-b flex items-center justify-between"
+                        onclick="toggleCollapsible(this)">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-sliders-h text-xl text-blue-600"></i>
+                            <h2 class="text-xl font-bold">Options Avancées</h2>
+                        </div>
+                        <i class="fas fa-chevron-down transition-transform"></i>
+                    </div>
+
+                    <div class="collapsible-content p-6">
+                        <div class="space-y-4">
+                            <!-- QCOW2 Compression -->
+                            <div id="compressionOption" style="display: none;" class="flex items-center gap-3">
+                                <input type="checkbox" id="compressionCheck" class="w-4 h-4">
+                                <label for="compressionCheck" class="cursor-pointer font-semibold">
+                                    <i class="fas fa-compress text-blue-600 mr-2"></i>
+                                    Compression QCOW2
+                                </label>
+                                <span class="text-sm text-gray-500">(réduit la taille du fichier)</span>
+                            </div>
+
+                            <!-- Validation -->
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" id="validationCheck" class="w-4 h-4" checked>
+                                <label for="validationCheck" class="cursor-pointer font-semibold">
+                                    <i class="fas fa-check-double text-blue-600 mr-2"></i>
+                                    Validation après conversion
+                                </label>
+                            </div>
+
+                            <!-- Threads Slider -->
+                            <div>
+                                <label for="threadsSlider" class="block font-semibold mb-2">
+                                    <i class="fas fa-microchip text-blue-600 mr-2"></i>
+                                    Nombre de threads: <span id="threadsValue">4</span>
+                                </label>
+                                <input type="range" id="threadsSlider" min="1" max="8" value="4"
+                                    class="w-full" oninput="updateThreads(this.value)">
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>1 (lent)</span>
+                                    <span>8 (rapide)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Conversion Progress -->
+            <section class="mb-8" id="progressSection" style="display: none;">
+                <div class="card p-6 bg-blue-50">
+                    <div class="dark-mode bg-blue-900"></div>
+                    
+                    <div class="flex items-center gap-3 mb-4">
+                        <i class="fas fa-cog text-xl text-blue-600 spinner"></i>
+                        <h3 class="text-lg font-bold">Conversion en cours</h3>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span id="progressMessage" class="font-semibold">Préparation...</span>
+                            <span id="progressTime" class="text-sm text-gray-600">
+                                <i class="fas fa-hourglass-half mr-2"></i><span id="timeRemaining">--</span>
+                            </span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <span id="progressPercent" class="text-sm font-bold">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Result Message -->
+            <section id="resultSection" style="display: none;" class="mb-8">
+                <div class="card p-6" id="resultCard">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i id="resultIcon" class="fas fa-2x"></i>
+                        <h3 id="resultTitle" class="text-lg font-bold"></h3>
+                    </div>
+                    <p id="resultMessage" class="mb-4"></p>
+                    <div id="resultDetails" class="text-sm space-y-1 mb-4"></div>
+                    <div class="flex gap-2">
+                        <button id="openResultFile" class="btn btn-primary" style="display: none;">
+                            <i class="fas fa-folder-open mr-2"></i> Ouvrir dossier
+                        </button>
+                        <button id="newConversionBtn" class="btn btn-secondary">
+                            <i class="fas fa-plus mr-2"></i> Nouvelle conversion
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Convert Button -->
+            <section class="mb-8">
+                <button id="convertBtn" class="btn btn-primary w-full py-3 text-lg" disabled>
+                    <i class="fas fa-bolt mr-2"></i> CONVERTIR
+                </button>
+            </section>
+
+            <!-- History Section -->
+            <section class="mb-8">
+                <div class="card">
+                    <div class="collapsible-header p-6 border-b flex items-center justify-between"
+                        onclick="toggleCollapsible(this)">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-history text-xl text-blue-600"></i>
+                            <h2 class="text-xl font-bold">Historique</h2>
+                        </div>
+                        <i class="fas fa-chevron-down transition-transform"></i>
+                    </div>
+
+                    <div class="collapsible-content p-6">
+                        <div id="historyList" class="space-y-3">
+                            <p class="text-gray-500 text-center py-4">Aucune conversion dans l'historique</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
